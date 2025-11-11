@@ -1,6 +1,6 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 
-const HOURS = [
+const files = [
   {label: '6 AM',  file: '1__11-05-2025_6am.csv'},
   {label: '7 AM',  file: '2__11-05-2025_7am.csv'},
   {label: '8 AM',  file: '3__11-05-2025_8am.csv'},
@@ -20,31 +20,51 @@ const acmColor = d3.scaleOrdinal()
   .domain([0, 1, 2, 3])
   .range(["#f4d27a", "#f09b5d", "#e24e34", "#a11c2c"]);
 
+
+let activeZoom = false;
+const PANES = [];
+
+const sharedZoom = d3.zoom()
+  .scaleExtent([1, 12])
+  .on("zoom", onZoom);
+
+function onZoom(event) {
+  if (activeZoom) return;
+  activeZoom = true;
+  const t = event.transform;
+  PANES.forEach(pane => {
+    pane.g.attr("transform", t);
+    pane.svg.property("__zoom", t);
+  });
+  activeZoom = false;
+}
+
 let caFeature = null;
 const csvCache = new Map();
+
 
 const selectLeft  = d3.select("#selectLeft");
 const selectRight = d3.select("#selectRight");
 
 selectLeft.selectAll("option")
-  .data(HOURS).join("option")
+  .data(files).join("option")
   .attr("value", d => d.file)
   .text(d => d.label);
 
 selectRight.selectAll("option")
-  .data(HOURS).join("option")
+  .data(files).join("option")
   .attr("value", d => d.file)
   .text(d => d.label);
 
-selectLeft.property("value", HOURS[0].file);
-selectRight.property("value", HOURS[1].file);
+selectLeft.property("value", files[0].file);
+selectRight.property("value", files[1].file);
 
 function createPane({ chartId, titleId }) {
   const width  = document.querySelector(`#${chartId}`).clientWidth;
   const height = document.querySelector(`#${chartId}`).clientHeight;
 
   const svg = d3.select(`#${chartId}`).append("svg")
-    .attr("viewBox", [0,0,width,height])
+    .attr("viewBox", [0, 0, width, height])
     .attr("width", "100%")
     .attr("height", "100%");
 
@@ -84,6 +104,11 @@ function createPane({ chartId, titleId }) {
       .attr("class", "coastline")
       .attr("d", path)
       .raise();
+
+    svg.call(sharedZoom
+      .translateExtent([[0, 0], [width, height]])
+      .extent([[0, 0], [width, height]])
+    );
   }
 
   function drawPoints(rows) {
@@ -99,7 +124,6 @@ function createPane({ chartId, titleId }) {
         .attr("cy", d => projection([d.lon, d.lat])[1])
         .attr("r", 3.5)
         .attr("fill", d => acmColor(d.ACM))
-        .attr("fill-opacity", 0.9)
         .on("mouseenter", function (event, d) {
           d3.select(this).attr("stroke", "#111").attr("stroke-width", 1.1);
           tooltip.style("opacity", 1).html(`
@@ -120,11 +144,20 @@ function createPane({ chartId, titleId }) {
     );
   }
 
-  return {
-    setTitle(text) { d3.select(`#${titleId}`).text(`Hour: ${text}`); },
-    drawBasemap,
-    drawPoints
+  svg.call(sharedZoom);
+
+  svg.on("dblclick", () => {
+    PANES.forEach(p => p.svg.transition().duration(300)
+      .call(sharedZoom.transform, d3.zoomIdentity));
+  });
+
+  const api = {
+    svg, g, width, height, drawBasemap, drawPoints,
+    setTitle(text) { d3.select(`#${titleId}`).text(`Hour: ${text}`); }
   };
+
+  PANES.push(api);
+  return api;
 }
 
 function renderSharedLegend() {
@@ -161,7 +194,7 @@ selectRight.on("change", function() {
 });
 
 function loadAndRender(file, pane) {
-  const label = HOURS.find(h => h.file === file)?.label ?? file;
+  const label = files.find(h => h.file === file)?.label ?? file;
   pane.setTitle(label);
 
   if (csvCache.has(file)) {
