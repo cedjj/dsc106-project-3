@@ -20,8 +20,6 @@ const acmColor = d3.scaleOrdinal()
   .domain([0, 1, 2, 3])
   .range(["#f4d27a", "#f09b5d", "#e24e34", "#a11c2c"]);
 
-const RADIUS = 3.5;
-
 let caFeature = null;
 const csvCache = new Map();
 
@@ -99,7 +97,7 @@ function createPane({ chartId, titleId }) {
         .attr("class", "point")
         .attr("cx", d => projection([d.lon, d.lat])[0])
         .attr("cy", d => projection([d.lon, d.lat])[1])
-        .attr("r", RADIUS)
+        .attr("r", 3.5)
         .attr("fill", d => acmColor(d.ACM))
         .attr("fill-opacity", 0.9)
         .on("mouseenter", function (event, d) {
@@ -138,7 +136,7 @@ function renderSharedLegend() {
   acmColor.domain().forEach((k, i) => {
     const item = host.append('span').attr('class', 'item');
     item.append('span').attr('class', 'swatch').style('background', acmColor(k));
-    item.append('span').text(labels[i] ?? `ACM ${k}`);
+    item.append('span').text(labels[i]);
   });
 }
 
