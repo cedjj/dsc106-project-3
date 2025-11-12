@@ -1,11 +1,15 @@
 html, body { 
-    margin:0; 
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+    margin: 1rem 1rem 1rem;
 }
 
 h1 { 
     text-align:center; 
     margin: 1rem 0 0.5rem; 
+}
+
+h2 {
+  font-size: 30px;
 }
 
 #controls {
