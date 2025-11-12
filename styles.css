@@ -118,3 +118,20 @@ select {
   border-radius: 2px;
   border: 1px solid black;
 }
+
+.city-layer .city {
+  fill: black;
+  stroke:white;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.city-layer .city-label {
+  font: 11px/1.2 system-ui, sans-serif;
+  fill: black;
+  paint-order: stroke;
+  stroke: white;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}

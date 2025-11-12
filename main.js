@@ -16,10 +16,17 @@ const files = [
   {label: '6 PM',  file: '13__11-05-2025_6pm.csv'},
 ];
 
+const CITIES = [
+  {name: "Los Angeles", lon: -118.2426, lat: 34.0549},
+  {name: "San Diego", lon: -117.1611, lat: 32.7157},
+  {name: "San Jose", lon: -121.8863, lat: 37.3382},
+  {name: "San Francisco", lon: -122.4194, lat: 37.7749},
+  {name: "Sacramento", lon: -121.4944, lat: 38.5781},
+];
+
 const acmColor = d3.scaleOrdinal()
   .domain([0, 1, 2, 3])
   .range(["#f4d27a", "#f09b5d", "#e24e34", "#a11c2c"]);
-
 
 let activeZoom = false;
 const PANES = [];
@@ -41,7 +48,6 @@ function onZoom(event) {
 
 let caFeature = null;
 const csvCache = new Map();
-
 
 const selectLeft  = d3.select("#selectLeft");
 const selectRight = d3.select("#selectRight");
@@ -71,6 +77,7 @@ function createPane({ chartId, titleId }) {
   const g = svg.append("g");
   const landLayer  = g.append("g");
   const pointLayer = g.append("g");
+  const cityLayer  = g.append("g").attr("class", "city-layer");
 
   const tooltip = d3.select("body").append("div")
     .attr("class", "tooltip")
@@ -86,6 +93,7 @@ function createPane({ chartId, titleId }) {
     const cp = defs.append("clipPath").attr("id", `${chartId}-clip`);
     cp.append("path").datum(caFeature).attr("d", path);
     pointLayer.attr("clip-path", `url(#${chartId}-clip)`);
+    cityLayer.attr("clip-path", `url(#${chartId}-clip)`);
 
     landLayer.append("path")
       .datum(caFeature)
@@ -105,9 +113,46 @@ function createPane({ chartId, titleId }) {
       .attr("d", path)
       .raise();
 
-    svg.call(sharedZoom
+    svg.call(sharedZoom);
+
+    sharedZoom
       .translateExtent([[0, 0], [width, height]])
-      .extent([[0, 0], [width, height]])
+      .extent([[0, 0], [width, height]]);
+
+    drawCities(CITIES);
+  }
+
+  function drawCities(cities) {
+    const data = cities.filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lon));
+
+    const dots = cityLayer.selectAll("circle.city")
+      .data(data, d => d.name);
+
+    dots.join(
+      enter => enter.append("circle")
+        .attr("class", "city")
+        .attr("r", 3.5)
+        .attr("cx", d => projection([d.lon, d.lat])[0])
+        .attr("cy", d => projection([d.lon, d.lat])[1]),
+      update => update
+        .attr("cx", d => projection([d.lon, d.lat])[0])
+        .attr("cy", d => projection([d.lon, d.lat])[1]),
+      exit => exit.remove()
+    );
+
+    const labels = cityLayer.selectAll("text.city-label")
+      .data(data, d => d.name);
+
+    labels.join(
+      enter => enter.append("text")
+        .attr("class", "city-label")
+        .attr("x", d => projection([d.lon, d.lat])[0] + 6)
+        .attr("y", d => projection([d.lon, d.lat])[1] + 3)
+        .text(d => d.name),
+      update => update
+        .attr("x", d => projection([d.lon, d.lat])[0] + 6)
+        .attr("y", d => projection([d.lon, d.lat])[1] + 3),
+      exit => exit.remove()
     );
   }
 
@@ -144,8 +189,6 @@ function createPane({ chartId, titleId }) {
     );
   }
 
-  svg.call(sharedZoom);
-
   svg.on("dblclick", () => {
     PANES.forEach(p => p.svg.transition().duration(300)
       .call(sharedZoom.transform, d3.zoomIdentity));
@@ -159,6 +202,7 @@ function createPane({ chartId, titleId }) {
   PANES.push(api);
   return api;
 }
+
 
 function renderSharedLegend() {
   const host = d3.select('#sharedLegend').html('');
