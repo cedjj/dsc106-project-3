@@ -16,7 +16,7 @@ const files = [
   {label: '6 PM',  file: '13__11-05-2025_6pm.csv'},
 ];
 
-const CITIES = [
+const cities = [
   {name: "Los Angeles", lon: -118.2426, lat: 34.0549},
   {name: "San Diego", lon: -117.1611, lat: 32.7157},
   {name: "San Jose", lon: -121.8863, lat: 37.3382},
@@ -119,12 +119,10 @@ function createPane({ chartId, titleId }) {
       .translateExtent([[0, 0], [width, height]])
       .extent([[0, 0], [width, height]]);
 
-    drawCities(CITIES);
+    drawCities(cities);
   }
 
-  function drawCities(cities) {
-    const data = cities.filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lon));
-
+  function drawCities(data) {
     const dots = cityLayer.selectAll("circle.city")
       .data(data, d => d.name);
 
@@ -188,11 +186,6 @@ function createPane({ chartId, titleId }) {
       exit => exit.remove()
     );
   }
-
-  svg.on("dblclick", () => {
-    PANES.forEach(p => p.svg.transition().duration(300)
-      .call(sharedZoom.transform, d3.zoomIdentity));
-  });
 
   const api = {
     svg, g, width, height, drawBasemap, drawPoints,
