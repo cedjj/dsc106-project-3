@@ -1,10 +1,11 @@
 html, body { 
+    margin: 0; 
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
     margin: 1rem 1rem 1rem;
 }
 
 h1 { 
-    text-align:center; 
+    text-align: center; 
     margin: 1rem 0 0.5rem; 
 }
 
@@ -21,7 +22,7 @@ h2 {
   padding: 0 1rem;
 }
 .pane-controls { 
-    text-align:center; 
+    text-align: center; 
 }
 
 label { 
@@ -71,14 +72,14 @@ select {
 
 
 .coastline { 
-    fill:none; 
-    stroke:black; 
-    stroke-width:2; 
+    fill: none; 
+    stroke: black; 
+    stroke-width: 2; 
 }
 
 .point { 
-    stroke:black; 
-    stroke-width:.3; 
+    stroke: black; 
+    stroke-width: .3; 
 }
 
 .tooltip {
@@ -121,4 +122,23 @@ select {
   height: 14px;
   border-radius: 2px;
   border: 1px solid black;
+}
+
+.city-layer .city {
+  fill: black;
+  stroke:white;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.city-layer .city-label {
+  font: 11px/1.2 system-ui, sans-serif;
+  fill: black;
+  paint-order: stroke;
+  stroke: white;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.6);
 }
