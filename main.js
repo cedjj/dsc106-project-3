@@ -1,5 +1,7 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm';
 
+let countyGeoJSON = null;
+
 const files = [
   {label: '6 AM',  file: 'data/1__11-05-2025_6am.csv'},
   {label: '7 AM',  file: 'data/2__11-05-2025_7am.csv'},
@@ -23,6 +25,28 @@ const cities = [
   {name: "San Francisco", lon: -122.4194, lat: 37.7749},
   {name: "Sacramento", lon: -121.4944, lat: 38.5781},
 ];
+
+Promise.all([
+  d3.json("california.geojson"),
+  d3.json("california_counties.geojson")
+]).then(([state, counties]) => {
+  caFeature = state.type === "FeatureCollection" ? state.features[0] : state;
+  countyGeoJSON = counties;
+
+  leftPane.drawBasemap();
+  rightPane.drawBasemap();
+
+  loadAndRender(selectLeft.property("value"), leftPane);
+  loadAndRender(selectRight.property("value"), rightPane);
+
+  selectLeft.on("change", function () {
+    loadAndRender(this.value, leftPane);
+  });
+  selectRight.on("change", function () {
+    loadAndRender(this.value, rightPane);
+  });
+});
+
 
 const acmColor = d3.scaleOrdinal()
   .domain([0, 1, 2, 3])
@@ -76,6 +100,7 @@ function createPane({ chartId, titleId }) {
 
   const g = svg.append("g");
   const landLayer  = g.append("g");
+  const countyLayer = g.append("g").attr("class", "county-layer");
   const pointLayer = g.append("g");
   const cityLayer  = g.append("g").attr("class", "city-layer");
 
@@ -154,6 +179,36 @@ function createPane({ chartId, titleId }) {
     );
   }
 
+  function drawCounties(acmByCounty) {
+  countyLayer.selectAll("path")
+    .data(countyGeoJSON.features)
+    .join("path")
+    .attr("d", path)
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 0.6)
+    .attr("fill", d => {
+      const name = d.properties.NAME;
+      return acmByCounty[name] != null
+        ? acmColor(Math.round(acmByCounty[name]))
+        : "#ccc";
+    })
+    .on("mouseenter", (event, d) => {
+      const name = d.properties.NAME;
+      tooltip.style("opacity", 1).html(`
+        <strong>${name}</strong><br>
+        Avg ACM: ${acmByCounty[name] ?? "N/A"}
+      `);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top",  (event.pageY + 10) + "px");
+    })
+    .on("mouseleave", () => {
+      tooltip.style("opacity", 0);
+    });
+}
+
   function drawPoints(rows) {
     const clean = rows.filter(d => d.lon && d.lat && d.ACM !== undefined && d.ACM !== null);
 
@@ -188,9 +243,12 @@ function createPane({ chartId, titleId }) {
   }
 
   const api = {
-    svg, g, width, height, drawBasemap, drawPoints,
-    setTitle(text) { d3.select(`#${titleId}`).text(`Hour: ${text}`); }
-  };
+  svg, g, width, height,
+  drawBasemap,
+  drawPoints,
+  drawCounties,
+  setTitle(text) { d3.select(`#${titleId}`).text(`Hour: ${text}`); }
+};
 
   PANES.push(api);
   return api;
@@ -215,13 +273,13 @@ const rightPane = createPane({ chartId: "chartRight", titleId: "titleRight" });
 
 renderSharedLegend();
 
-d3.json("california.geojson").then(geo => {
-  caFeature = geo.type === "FeatureCollection" ? geo.features[0] : geo;
-  leftPane.drawBasemap();
-  rightPane.drawBasemap();
-  loadAndRender(selectLeft.property("value"), leftPane);
-  loadAndRender(selectRight.property("value"), rightPane);
-});
+// d3.json("california.geojson").then(geo => {
+//   caFeature = geo.type === "FeatureCollection" ? geo.features[0] : geo;
+//   leftPane.drawBasemap();
+//   rightPane.drawBasemap();
+//   selectLeft.on("change", () => loadAndRender(selectLeft.value, leftPane));
+//   selectRight.on("change", () => loadAndRender(selectRight.value, rightPane));
+// });
 
 selectLeft.on("change", function() {
   loadAndRender(this.value, leftPane);
@@ -231,18 +289,20 @@ selectRight.on("change", function() {
 });
 
 function loadAndRender(file, pane) {
-  const label = files.find(h => h.file === file)?.label ?? file;
-  pane.setTitle(label);
+  const base = file
+    .replace(/^data\//, "") 
+    .replace(".csv", "_county.json");
+  const jsonPath = "aggregated/" + base;
 
-  if (csvCache.has(file)) {
-    pane.drawPoints(csvCache.get(file));
+  pane.setTitle(files.find(f => f.file === file).label);
+
+  if (csvCache.has(jsonPath)) {
+    pane.drawCounties(csvCache.get(jsonPath));
     return;
   }
-  d3.csv(file, d3.autoType).then(rows => {
-    csvCache.set(file, rows);
-    pane.drawPoints(rows);
-  }).catch(err => {
-    console.error(`Failed to load ${file}`, err);
-    alert(`Failed to load ${file}. Check filename and server.`);
+
+  d3.json(jsonPath).then(data => {
+    csvCache.set(jsonPath, data);
+    pane.drawCounties(data);
   });
 }
