@@ -1,63 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DSC 106 Project 3</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <title>California Cloud Cover (GOES-18, Multi-day)</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-    
-</body>
-</html>
+  <div class="page">
 
-<!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-    <meta charset="UTF-8" /> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
-    <title>Cloud Probability Over California on November 5th</title> 
-    <link rel="stylesheet" href="styles.css"> 
-</head> 
-<body> 
-    <h1>Comparing Cloud Probability in California on November 5, 2025</h1> 
-    <div id="controls"> 
-        <div class="pane-controls"> 
-            <label>Left hour: 
-                <select id="selectLeft"></select> 
-            </label> 
-        </div> 
-        <div class="pane-controls"> 
-            <label>Right hour: <select id="selectRight"></select> </label> 
-        </div> 
-    </div> 
-    <div id="grid"> 
-        <div class="pane">
-             <div class="pane-title" id="titleLeft">Hour: —</div> 
-             <div id="chartLeft" class="chart"></div> 
-            </div> <div class="pane"> <div class="pane-title" id="titleRight">Hour: —</div> 
-            <div id="chartRight" class="chart"></div>
-         </div>
-    </div> 
-    <div id="sharedLegend" aria-label="ACM category legend"></div> 
-    <h2>Write Up</h2>
+    <header>
+      <h1>Cloud Cover Over California Counties</h1>
+      <p>
+        Visualizing multi-day cloud cover data from the GOES-18 satellite
+        across California counties. Use the timeline view to explore changes over time.
+      </p>
+    </header>
+
+    <nav class="mode-toggle">
+      <button id="mode-timeline-btn" class="mode-btn active">Timeline view</button>
+      <button id="mode-compare-btn" class="mode-btn">Comparison view</button>
+    </nav>
+
+    <!-- timeline -->
+    <section id="timeline-mode" class="mode-section">
+      <div class="controls">
+        <label for="timeline-slider">
+          Time: <span id="timeline-label"></span>
+        </label>
+        <input
+          type="range"
+          id="timeline-slider"
+          min="0"
+          max="10"
+          step="1"
+          value="0"
+        />
+
+        <div id="timeline-ticks" class="timeline-ticks"></div>
+
+        <div class="selected-label">
+            Selected county: <span id="timeline-selected-label">none</span>
+        </div>
+      </div>
+
+      <div class="viz">
+        <div class="map-container">
+          <svg id="timeline-map-svg"></svg>
+        </div>
+        <div id="legend" class="legend-box"></div>
+      </div>
+    </section>
+
+    <!-- compare -->
+    <section id="compare-mode" class="mode-section hidden">
+      <div class="compare-controls">
+        <div class="compare-panel">
+            <label for="compare-left-select">Left time:</label>
+            <select id="compare-left-select"></select>
+        <div class="selected-label">
+            Selected county: <span id="compare-left-selected-label">none</span>
+        </div>
+        </div>
+        <div class="compare-panel">
+            <label for="compare-right-select">Right time:</label>
+            <select id="compare-right-select"></select>
+        <div class="selected-label">
+            Selected county: <span id="compare-right-selected-label">none</span>
+        </div>
+        </div>
+    </div>
+
+      <div class="viz compare-viz">
+        <div class="map-container">
+          <svg id="compare-left-map-svg"></svg>
+        </div>
+        <div class="map-container">
+          <svg id="compare-right-map-svg"></svg>
+        </div>
+        <div id="legend-compare" class="legend-box"></div>
+      </div>
+    </section>
+
+    <footer>
+      <p>
+        Data: GOES-18 ABI-L2-ACM 
+      </p>
+    </footer>
+  </div>
+
+  <div id="tooltip" class="tooltip" style="opacity: 0;"></div>
+  <h2>Write Up</h2>
     <h3>Design Decisions:</h3>
-    <p>For this project, our group decided to use a side-by-side map layout to allow direct comparison of 
-        cloud probability between two different times. This layout enables users to see spatial differences 
-        without having to hover over the map. Cloud probability (ACM category) is represented with distinct 
-        colors to encode categorical data. We implemented tooltips that display coordinates and cloud probability 
-        when a user hovers over a point. Additionally, we included synchronized zooming, so that when a user zooms 
-        in on one map, the same magnification is applied to the other map, helping users make a detailed 
-        comparison between the two time periods in California. Beyond zooming, we also enabled panning after 
-        zooming, allowing users to explore different areas of the maps without needing to re-magnify. We also 
-        included major cities of California to give the viewer some perspective on what a city they probably know 
-        experiences in terms of their clouds.<br><br>
+    <p>For this project, our group decided to use both a timeline layout and a side-by-side map layout to explore
+        cloud coverage between two different times across California counties. Timeline layout lets users scroll through
+        hourly data to observe changes over time, while the side-by-side map layout allows for direct comparison between 
+        two chosen time points without switching views.  <br><br>
+        We implemented a hover tooltip to display more information about the county, including name, time, and cloud coverage 
+        percentage, as well as hovering highlighted counties on both maps on the comparison mode. We also implemented a zoom
+        feature that zoomed in on the selected county, and a label to show which county was selected. We added labels for major
+        cities in California, as well as labels to help know where each break in date was in the timeline. <br><br>
 
-    One alternative we considered was using a single map with a time slider to display cloud probability at 
-    different hours. We ultimately decided against this because a slider shows progression over time, rather 
-    than allowing direct comparison between two specific periods. Another alternative was displaying a larger 
-    area, but this approach was quickly rejected because it was computationally intensive to load all the CSVs 
-        and datapoints simultaneously.</p>
+    </p>
     <h3>Development Process:</h3>
     <p>Terence did the retrieving of the GOES data that we needed. 
         Siddhartha did the code to make the visualizations. 
@@ -68,14 +112,14 @@
         At first, we had a different compelling question, which was if natural disasters had an impact on the surface temperature.
         We chose to look at Hurricane Melissa, but upon looking at the region the hurricane affected, we found that the clouds of the hurricane blocked information that we needed.
         We had to pivot, since our original question was a dead-end, so we chose to look at clouds, specifically in California.
-        We wanted to visualize the clouds across the daytime hours, hoping to see if it would tell us something about how clouds behaved over the course of a day.
-        So we started by getting the cloud probability of the latest date available to us, which was November 5, 2025. 
-        From here, we processed the data into CSV files, filtered the longitude and latitude to only be within California, and started working on the website. 
+        We wanted to visualize the clouds across the daytime hours, hoping to see if it would tell us something about how clouds behaved over the course of a few days.
+        So we started by getting the cloud mask of the latest dates available to us, which was November 3-5, 2025. 
+        From here, we processed the data into a CSV file, filtered the longitude and latitude to only be within California and grouped the data by county boundaries, and started working on the website. 
         We wanted viewers to be able to compare the clouds across the day, so we came up with the design of our website described above.
-        Once we implemented the design, we added more details like highlighting major cities and adding a zoom feature that would zoom into both visualizations.
-        That ended the development process and altogether took us a total of about 11 hours to finish.
-        The most time-consuming parts were working on our first compelling question that didn't work out (about 4 hours) and the development of the website (about 5 hours).
+        Once we implemented the design, we added more details like highlighting major cities and adding the synchronized hover feature.
+        That ended the development process and altogether took us a total of about 15 hours to finish.
+        The most time-consuming parts were working on our first compelling question that didn't work out (about 4 hours) and the development of the website (about 9 hours).
     </p>
-    <script type="module" src="main.js"></script> 
-</body> 
+  <script src="main.js"></script>
+</body>
 </html>
